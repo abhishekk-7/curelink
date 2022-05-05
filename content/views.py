@@ -4,6 +4,8 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from account.models import UserModel
+from django.conf import settings
+from django.core.mail import send_mail
 
 # Create your views here.
 
@@ -23,5 +25,16 @@ class SendEmailView(GenericAPIView):
     queryset = UserModel.objects.all()
 
     def post(self, request):
-        print(request.data)
-        return Response(UserModel.objects.filter(subscription=request.data['topic']).values('email'), status=status.HTTP_200_OK)
+        try:
+            subject = request.data['subject']
+            message = request.data['content']
+            email_from = settings.EMAIL_HOST_USER
+            recipient_list = []
+            to_mails = UserModel.objects.filter(
+                topic=request.data['topic']).values('email').distinct()
+            for mail in to_mails:
+                recipient_list.append(mail['email'])
+            send_mail(subject, message, email_from, recipient_list)
+            return Response("success", status=status.HTTP_200_OK)
+        except:
+            return Response("failed", status=status.HTTP_400_BAD_REQUEST)
