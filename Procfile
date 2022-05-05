@@ -1,0 +1,1 @@
+web: gunicorn curelink.wsgi --log-file -
